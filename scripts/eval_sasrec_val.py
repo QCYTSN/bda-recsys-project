@@ -82,13 +82,14 @@ def evaluate_on_val(
     val_data: list,
     max_len: int = 50,
     padding_idx: int = 0,
-    k: int = 10,
     max_eval_users: int = 200,
 ) -> None:
     model.eval()
 
-    hr_scores = []
-    ndcg_scores = []
+    hr10_scores = []
+    ndcg10_scores = []
+    hr20_scores = []
+    ndcg20_scores = []
 
     with torch.no_grad():
         for _, train_seq, target_item in val_data[:max_eval_users]:
@@ -109,19 +110,27 @@ def evaluate_on_val(
 
             ranked_items = torch.argsort(final_logits, descending=True).tolist()
 
-            hr = hit_rate_at_k(ranked_items, target_item, k)
-            ndcg = ndcg_at_k(ranked_items, target_item, k)
+            hr10 = hit_rate_at_k(ranked_items, target_item, 10)
+            ndcg10 = ndcg_at_k(ranked_items, target_item, 10)
+            hr20 = hit_rate_at_k(ranked_items, target_item, 20)
+            ndcg20 = ndcg_at_k(ranked_items, target_item, 20)
 
-            hr_scores.append(hr)
-            ndcg_scores.append(ndcg)
+            hr10_scores.append(hr10)
+            ndcg10_scores.append(ndcg10)
+            hr20_scores.append(hr20)
+            ndcg20_scores.append(ndcg20)
 
-    mean_hr = sum(hr_scores) / len(hr_scores)
-    mean_ndcg = sum(ndcg_scores) / len(ndcg_scores)
+    mean_hr10 = sum(hr10_scores) / len(hr10_scores)
+    mean_ndcg10 = sum(ndcg10_scores) / len(ndcg10_scores)
+    mean_hr20 = sum(hr20_scores) / len(hr20_scores)
+    mean_ndcg20 = sum(ndcg20_scores) / len(ndcg20_scores)
 
     print("-" * 50)
-    print(f"Validation over {len(hr_scores)} users")
-    print(f"HR@{k}: {mean_hr:.4f}")
-    print(f"NDCG@{k}: {mean_ndcg:.4f}")
+    print(f"Validation over {len(hr10_scores)} users")
+    print(f"HR@10: {mean_hr10:.4f}")
+    print(f"NDCG@10: {mean_ndcg10:.4f}")
+    print(f"HR@20: {mean_hr20:.4f}")
+    print(f"NDCG@20: {mean_ndcg20:.4f}")
 
 
 def main() -> None:
@@ -146,8 +155,7 @@ def main() -> None:
         val_data=val_data,
         max_len=50,
         padding_idx=padding_idx,
-        k=10,
-        max_eval_users=200,
+        max_eval_users=500,
     )
 
 
