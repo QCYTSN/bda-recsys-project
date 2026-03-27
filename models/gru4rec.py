@@ -36,15 +36,16 @@ class GRU4Rec(nn.Module):
 
         self.output_layer = nn.Linear(hidden_dim, num_items + 1)
 
-    def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
+    def forward(self, input_ids: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
             input_ids: [B, L]
 
         Returns:
             logits: [B, L, num_items + 1]
+            hidden_states: [B, L, hidden_dim]
         """
-        x = self.item_embedding(input_ids)       # [B, L, D]
-        h, _ = self.gru(x)                       # [B, L, H]
-        logits = self.output_layer(h)            # [B, L, num_items + 1]
-        return logits
+        x = self.item_embedding(input_ids)
+        h, _ = self.gru(x)
+        logits = self.output_layer(h)
+        return logits, h

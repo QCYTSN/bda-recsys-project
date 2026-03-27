@@ -1,0 +1,4 @@
+2026.3.27
+GRU4Rec (3 epochs, eval 200 users): HR@10=0.1100, NDCG@10=0.0583
+SASRec (3 epochs, eval 200 users): HR@10=0.0500, NDCG@10=0.0204
+Time-Aware SASRec (3 epochs, eval 200 users): HR@10=0.1100, NDCG@10=0.0594
