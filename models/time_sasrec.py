@@ -5,6 +5,7 @@ from typing import List
 import torch
 import torch.nn as nn
 
+from utils.model_utils import get_last_non_padding_indices
 from utils.time_features import build_time_diff_bucket_matrix
 
 
@@ -190,10 +191,14 @@ class TimeAwareSASRec(nn.Module):
 
         return torch.stack(batch_bucket_mats, dim=0).to(input_times.device)
 
-    def forward(self, input_ids: torch.Tensor, input_times: torch.Tensor) -> torch.Tensor:
+    def _encode(self, input_ids: torch.Tensor, input_times: torch.Tensor) -> torch.Tensor:
         """
-        input_ids: [B, L]
-        input_times: [B, L]
+        Args:
+            input_ids: [B, L]
+            input_times: [B, L]
+
+        Returns:
+            hidden_states: [B, L, hidden_dim]
         """
         B, L = input_ids.shape
         device = input_ids.device
@@ -215,5 +220,34 @@ class TimeAwareSASRec(nn.Module):
                 padding_mask=padding_mask,
             )
 
-        logits = self.output_layer(x)
+        return x
+
+    def forward(self, input_ids: torch.Tensor, input_times: torch.Tensor) -> torch.Tensor:
+        """
+        input_ids: [B, L]
+        input_times: [B, L]
+        """
+        hidden_states = self._encode(input_ids, input_times)
+        logits = self.output_layer(hidden_states)
         return logits
+
+    def get_sequence_embedding(self, input_ids: torch.Tensor, input_times: torch.Tensor) -> torch.Tensor:
+        """
+        Get sequence representation E_seq for each sequence in the batch.
+
+        Args:
+            input_ids: [B, L]
+            input_times: [B, L]
+
+        Returns:
+            seq_emb: [B, hidden_dim]
+        """
+        hidden_states = self._encode(input_ids, input_times)  # [B, L, H]
+        last_indices = get_last_non_padding_indices(
+            input_ids=input_ids,
+            padding_idx=self.padding_idx,
+        )  # [B]
+
+        batch_indices = torch.arange(input_ids.size(0), device=input_ids.device)
+        seq_emb = hidden_states[batch_indices, last_indices]  # [B, H]
+        return seq_emb

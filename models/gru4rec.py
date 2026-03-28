@@ -3,6 +3,8 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
+from utils.model_utils import get_last_non_padding_indices
+
 
 class GRU4Rec(nn.Module):
     """
@@ -49,3 +51,23 @@ class GRU4Rec(nn.Module):
         h, _ = self.gru(x)
         logits = self.output_layer(h)
         return logits, h
+
+    def get_sequence_embedding(self, input_ids: torch.Tensor) -> torch.Tensor:
+        """
+        Get sequence representation E_seq for each sequence in the batch.
+
+        Args:
+            input_ids: [B, L]
+
+        Returns:
+            seq_emb: [B, hidden_dim]
+        """
+        _, hidden_states = self.forward(input_ids)  # [B, L, H]
+        last_indices = get_last_non_padding_indices(
+            input_ids=input_ids,
+            padding_idx=self.padding_idx,
+        )  # [B]
+
+        batch_indices = torch.arange(input_ids.size(0), device=input_ids.device)
+        seq_emb = hidden_states[batch_indices, last_indices]  # [B, H]
+        return seq_emb
