@@ -23,3 +23,12 @@ For sequence models, the sequence representation `E_seq` is defined as the hidde
 
 ## Key Finding
 Relative time-aware attention substantially improves Transformer-based sequential recommendation on the current Amazon Electronics setup.
+
+## Interface for Fusion
+Sequence models provide:
+- GRU4Rec: `get_sequence_embedding(input_ids)`
+- SASRec: `get_sequence_embedding(input_ids)`
+- Time-Aware SASRec: `get_sequence_embedding(input_ids, input_times)`
+
+Return:
+- `E_seq` with shape `[batch_size, 64]`
