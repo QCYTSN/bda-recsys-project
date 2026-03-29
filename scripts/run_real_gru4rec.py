@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -15,6 +17,10 @@ def main() -> None:
     padding_idx = 0
     batch_size = 32
     num_items = 1706
+    epochs = 3
+
+    checkpoint_dir = Path("outputs/checkpoints/gru4rec_real")
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     dataset = SeqDataset(
         user_sequences=clean_user_sequences,
@@ -35,7 +41,7 @@ def main() -> None:
 
     model.train()
 
-    for epoch in range(3):
+    for epoch in range(epochs):
         total_loss = 0.0
 
         for batch_idx, batch in enumerate(dataloader):
@@ -62,6 +68,18 @@ def main() -> None:
 
         avg_loss = total_loss / len(dataloader)
         print(f"Epoch {epoch+1} Average Loss: {avg_loss:.4f}")
+
+        checkpoint_path = checkpoint_dir / f"epoch_{epoch + 1:03d}.pt"
+        torch.save(
+            {
+                "epoch": epoch + 1,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "avg_train_loss": avg_loss,
+            },
+            checkpoint_path,
+        )
+        print(f"Saved checkpoint: {checkpoint_path}")
         print("-" * 50)
 
 
