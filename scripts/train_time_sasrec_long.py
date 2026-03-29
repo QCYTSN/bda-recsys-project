@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import random
+from pathlib import Path
 from typing import List
 
 import torch
@@ -131,6 +132,9 @@ def main() -> None:
     lr = 1e-3
     patience = 5
 
+    checkpoint_dir = Path('outputs/checkpoints/time_sasrec_long')
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
     dataset = TrainSplitSeqDataset(
         train_data=train_data,
         user_time_map=user_time_map,
@@ -216,9 +220,24 @@ def main() -> None:
                 f"No improvement for {epochs_without_improve} epoch(s) "
                 f"(patience={patience})."
             )
-            if epochs_without_improve >= patience:
-                print("Early stopping triggered.")
-                break
+
+        checkpoint_path = checkpoint_dir / f"epoch_{epoch + 1:03d}.pt"
+        torch.save(
+            {
+                "epoch": epoch + 1,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "val_metrics": val_metrics,
+                "best_val_hr10_so_far": best_val_hr10,
+                "best_epoch_so_far": best_epoch,
+            },
+            checkpoint_path,
+        )
+        print(f"Saved checkpoint: {checkpoint_path}")
+
+        if epochs_without_improve >= patience:
+            print("Early stopping triggered.")
+            break
 
     print("=" * 60)
     print(f"Best epoch: {best_epoch}")
@@ -254,4 +273,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
